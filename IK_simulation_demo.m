@@ -1,25 +1,25 @@
 clc;
 clear;
 
-% 初始化容器和长方体的尺寸
-container_size = 45; % 正方体容器边长
-length = 8; % 长方体长度
-width = 10;  % 长方体宽度
-height = 6; % 长方体高度
+% Initialize the dimensions of the container (a cube) and the rectangular box
+container_size = 45; % Side length of the cubic container
+length = 8; % Length of the rectangular box
+width = 10;  % Width of the rectangular box
+height = 6; % Height of the rectangular box
 
-% 创建长方体的顶点
+% Define the vertices of the rectangular box
 vertices = [
-    -length/2 -width/2 -height/2;   % 1
-    length/2 -width/2 -height/2;   % 2
-    length/2 width/2 -height/2;   % 3
-    -length/2 width/2 -height/2;   % 4
-    -length/2 -width/2 height/2;   % 5
-    length/2 -width/2 height/2;   % 6
-    length/2 width/2 height/2;   % 7
-    -length/2 width/2 height/2   % 8
+    -length/2 -width/2 -height/2;   % Vertex 1
+    length/2 -width/2 -height/2;   % Vertex 2
+    length/2 width/2 -height/2;   % Vertex 3
+    -length/2 width/2 -height/2;   % Vertex 4
+    -length/2 -width/2 height/2;   % Vertex 5
+    length/2 -width/2 height/2;   % Vertex 6
+    length/2 width/2 height/2;   % Vertex 7
+    -length/2 width/2 height/2   % Vertex 8
 ];
 
-% 长方体的面索引
+% Define the faces of the rectangular box using vertex indices
 faces = [
     1 2 3 4;
     5 6 7 8;
@@ -29,7 +29,7 @@ faces = [
     4 1 5 8
 ];
 
-% 创建图形
+% Create a figure and set up the 3D view
 figure;
 axis equal;
 xlim([-container_size/2 container_size/2]);
@@ -38,7 +38,7 @@ zlim([-container_size/2 container_size/2]);
 grid on;
 view(3);
 
-% 绘制正方体容器的顶点和面
+% Define the vertices of the cubic container
 container_vertices = [
     -container_size/2, -container_size/2, -container_size/2;
     container_size/2, -container_size/2, -container_size/2;
@@ -50,6 +50,7 @@ container_vertices = [
     -container_size/2, container_size/2, container_size/2;
 ];
 
+% Define the faces of the cubic container
 container_faces = [
     1 2 3 4;
     5 6 7 8;
@@ -59,15 +60,15 @@ container_faces = [
     4 1 5 8
 ];
 
-% 绘制容器
+% Draw the transparent cubic container
 hold on;
 patch('Faces', container_faces, 'Vertices', container_vertices, 'FaceColor', 'g', 'FaceAlpha', 0.1);
 
-% 初始化长方体的位置和旋转角度
-position = [0, 0, 0]; % 初始位置
-angles = [0, 0, 0]; % 初始旋转角度，绕x, y, z轴
+% Initialize position and rotation angles of the rectangular box
+position = [0, 0, 0]; % Initial position
+angles = [0, 0, 0]; % Initial rotation angles around x, y, z axes
 
-% 设置旋转矩阵
+% Define the rotation matrix function
 rotation_matrix = @(angle, axis) ...
     [cos(angle) + axis(1)^2 * (1 - cos(angle)), axis(1)*axis(2)*(1 - cos(angle)) - axis(3)*sin(angle), axis(1)*axis(3)*(1 - cos(angle)) + axis(2)*sin(angle);
      axis(2)*axis(1)*(1 - cos(angle)) + axis(3)*sin(angle), cos(angle) + axis(2)^2 * (1 - cos(angle)), axis(2)*axis(3)*(1 - cos(angle)) - axis(1)*sin(angle);
@@ -75,18 +76,18 @@ rotation_matrix = @(angle, axis) ...
  
 rotated_vertices = vertices;
 
-% 初始化长方体的patch对象
+% Create the rectangular box patch object
 h = patch('Faces', faces, 'Vertices', vertices, 'FaceColor', 'b');
 
-% 初始化长方体到容器顶点的红色连接线
-h_line = gobjects(1, 8);  % 预先创建8个对象来存储每条红线
+% Initialize red lines connecting the rectangular box to the container vertices
+h_line = gobjects(1, 8);  % Preallocate 8 line objects
 for i = 1:8
     h_line(i) = plot3([container_vertices(i,1), rotated_vertices(i,1)], ...
                       [container_vertices(i,2), rotated_vertices(i,2)], ...
                       [container_vertices(i,3), rotated_vertices(i,3)], 'Color', 'r', 'LineWidth', 2);
 end
 
-% 设置动画的时间步长
+% Animation loop
 num_frames = 1000;
 for k = 1:num_frames
     if k < 200
@@ -106,26 +107,26 @@ for k = 1:num_frames
         angles = [0, 0, 0];
     end
 
-    % 计算旋转矩阵
+    % Compute the composite rotation matrix
     R_x = rotation_matrix(angles(1), [1, 0, 0]);
     R_y = rotation_matrix(angles(2), [0, 1, 0]);
     R_z = rotation_matrix(angles(3), [0, 0, 1]);
     R = R_x * R_y * R_z;
     
-    % 旋转后的顶点
+    % Apply rotation and translation to the rectangular box
     rotated_vertices = (R * vertices')';
     rotated_vertices = rotated_vertices + position;
     
-    % 更新长方体的顶点
+    % Update the patch object with the new vertices
     h.Vertices = rotated_vertices;
     
-    % 更新连接线
+    % Update the red connecting lines
     for i = 1:8
         set(h_line(i), 'XData', [container_vertices(i,1), rotated_vertices(i,1)], ...
                         'YData', [container_vertices(i,2), rotated_vertices(i,2)], ...
                         'ZData', [container_vertices(i,3), rotated_vertices(i,3)]);
     end
     
-    % 强制刷新图形
+    % Force MATLAB to refresh the figure
     drawnow;
 end
