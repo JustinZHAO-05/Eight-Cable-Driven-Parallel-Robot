@@ -94,7 +94,8 @@ def move_to_target(target_lengths):
     send_motor_steps(steps)
     current_lengths = target_lengths
 
-def execute_trajectory_workspace(start_pose, target_pose, T, num_samples):
+def execute_trajectory_workspace(start_pose, target_pose, start_velocity, target_velocity,
+                                  start_acceleration, target_acceleration, T, num_samples):
     """
     在工作空间进行轨迹规划：
       1. 首先将机器人移动到起始位姿 start_pose（先求解 IK 得到初始绳长，再移动）
@@ -108,15 +109,20 @@ def execute_trajectory_workspace(start_pose, target_pose, T, num_samples):
     s_start = inverse_kinematics(start_pose)
     move_to_target(s_start)
     current_pose = start_pose.copy()  # 更新当前位姿
+    print("\n当前位姿:", current_pose)
+    print("当前绳长:", current_lengths)
     
     # 规划工作空间轨迹（轨迹上的每个点为 6 维位姿）
-    pose_traj = workspace_trajectory_planning(start_pose, target_pose, T, num_samples)
+    pose_traj = workspace_trajectory_planning(start_pose, target_pose, start_velocity, target_velocity,
+                                  start_acceleration, target_acceleration, T, num_samples)
     
     # 对轨迹上每个位姿点，求逆解得到目标绳长，并运动
     for pose in pose_traj:
         s_target = inverse_kinematics(pose)
         move_to_target(s_target)
         current_pose = pose  # 更新当前位姿
+        print("\n当前位姿:", current_pose)
+        print("当前绳长:", current_lengths)
 
 def manual_control(key_input):
     """
@@ -140,6 +146,8 @@ def manual_control(key_input):
 
     s_target = inverse_kinematics(current_pose)
     move_to_target(s_target)
+    print("\n当前位姿:", current_pose)
+    print("当前绳长:", current_lengths)
 
 def initialize_robot():
     """
@@ -168,7 +176,7 @@ def main():
             start_pose = [0.5, 0.5, 0.3, 0, 0, 0]
             target_pose = [0.6, 0.6, 0.35, 0.05, 0.05, 0.1]
             # T = 2秒，50个采样点
-            execute_trajectory_workspace(start_pose, target_pose, 2, 50)
+            execute_trajectory_workspace(start_pose, target_pose,[0]*6,[0]*6,[0]*6,[0]*6, 2, 50)
         elif mode == "2":
             # 手动控制模式
             while True:
