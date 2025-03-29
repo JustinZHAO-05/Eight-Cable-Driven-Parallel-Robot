@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import serial
 import numpy as np
-
+from IK_calculation import calculate_cable_lengths 
 # -------------------------------
 # 全局变量：机器人状态
 # -------------------------------
@@ -15,12 +15,8 @@ current_lengths = [0] * 8
 # -------------------------------
 
 def inverse_kinematics(target_pose):
-    """
-    计算逆解，返回目标绳长列表
-    此处使用你自己的机器人模型，替换 some_inverse_kinematics_function
-    """
-    # 请根据实际模型实现
-    target_lengths = some_inverse_kinematics_function(target_pose)
+
+    target_lengths = calculate_cable_lengths(target_pose)
     return target_lengths
 
 def compute_motor_steps(current_lengths, target_lengths, step_angle=1.8, reduction_ratio=1, drum_radius=0.02):

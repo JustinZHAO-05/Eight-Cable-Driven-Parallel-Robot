@@ -100,6 +100,6 @@ def calculate_cable_lengths(x, y, z, alpha, beta, gamma, container_size=60, a=7.
     
     # Combine the eight cable lengths into an 1x8 array.
     Q = [Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8]
+    Q = [float(val) for val in Q]
     return Q
 
-print(calculate_cable_lengths([0,0,0,0,0,0]))
