@@ -1,0 +1,72 @@
+clc;
+clear;
+
+%% Define symbolic parameters for the robot dimensions
+% 'a', 'b', 'c' are the platform dimensions (length, width, height)
+% 'container_size' is the side length of the cubic container
+syms a b c container_size real;
+
+% Compute half-dimensions of the platform (used to determine mounting points)
+hl = a/2;
+hw = b/2;
+hh = c/2;
+
+%% Define container corners (CV)
+% The container is a cube with side length 'container_size'. Its 8 corners are:
+cv1 = [container_size; container_size; container_size];
+cv2 = [container_size; 0; container_size];
+cv3 = [0; 0; container_size];
+cv4 = [0; container_size; container_size];
+cv5 = [container_size; container_size; 0];
+cv6 = [container_size; 0; 0];
+cv7 = [0; 0; 0];
+cv8 = [0; container_size; 0];
+
+% CV is a 3x8 matrix; each column is one corner.
+CV = [cv1, cv2, cv3, cv4, cv5, cv6, cv7, cv8];
+
+%% Define platform mounting points relative to the platform center (MAV)
+% The platform is assumed to be a rectangular box.
+av1 = [hl;  hw;  hh];
+av2 = [hl; -hw;  hh];
+av3 = [-hl; -hw;  hh];
+av4 = [-hl;  hw;  hh];
+av5 = [hl;  hw; -hh];
+av6 = [hl; -hw; -hh];
+av7 = [-hl; -hw; -hh];
+av8 = [-hl;  hw; -hh];
+
+% MAV is a 3x8 matrix; each column is the mounting point (relative vector)
+MAV = [av1, av2, av3, av4, av5, av6, av7, av8];
+
+%% Define symbolic variables for the platform pose (in the workspace)
+% Pose: [x, y, z, roll, pitch, yaw]
+syms x y z real;
+syms alpha beta gamma real;  % Euler angles (roll, pitch, yaw) in ZYX order
+
+%% Build the platform pose transformation matrix
+% WTM: Translation vector as a column vector
+WTM = [x; y; z];
+
+% WRM: Rotation transformation from Euler angles using our custom eul2rotm
+WRM = eul2rotm([alpha, beta, gamma], 'ZYX');
+
+% The homogeneous transformation for the platform
+pose = trvec2tform(WTM) * WRM;
+
+%% Transform the platform mounting points to world coordinates
+% Extend MAV to homogeneous coordinates (add a row of ones)
+exMAV = [MAV; ones(1,8)];
+% Transform: WAV = pose * exMAV, then take the first 3 rows
+exWAV = pose * exMAV;
+WAV = exWAV(1:3, :);
+
+%% Compute the cable lengths (Q)
+% Q is an 8x1 column vector of the Euclidean distances between the container
+% corners (CV) and the transformed platform mounting points (WAV).
+Q = sqrt(sum((CV - WAV).^2, 1)).';
+disp('Cable lengths Q:');
+disp(Q);
+
+
+
