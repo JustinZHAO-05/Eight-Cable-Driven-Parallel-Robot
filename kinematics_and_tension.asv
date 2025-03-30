@@ -1,4 +1,4 @@
-function T_cable=cable_tension(x,y,z,roll,pitch,yaw,a,euler_dot,euler_ddot)
+function cable_tension(x,y,z,roll,pitch,yaw,a,euler_dot,euler_ddot)
 
 
 
