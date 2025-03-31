@@ -1,6 +1,6 @@
 import numpy as np
 
-def calculate_cable_lengths(x, y, z, alpha, beta, gamma, container_size=60, a=7.5, b=7.5, c=9):
+def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
     """
     Calculate the cable lengths for a 6-DOF, 8-cable driven parallel robot.
     
@@ -14,6 +14,12 @@ def calculate_cable_lengths(x, y, z, alpha, beta, gamma, container_size=60, a=7.
     Returns:
         Q: An 1x8 array containing the cable lengths.
     """
+    x = pose[0]
+    y = pose[1]
+    z = pose[2]
+    alpha = pose[3]
+    beta = pose[4]
+    gamma = pose[5]
     # Cable 1
     Term1_x = x - container_size - (b*(np.cos(gamma)*np.sin(alpha) - np.cos(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
               + (c*(np.sin(alpha)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma)*np.sin(beta)))/2 \
