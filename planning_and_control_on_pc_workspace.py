@@ -11,7 +11,7 @@ current_pose = [0, 0, 0, 0, 0, 0] #cm
 # current_lengths: cable lengths for 8 cables
 current_lengths = [0] * 8  
 
-# -------------------------------
+# ------------------------------- 
 # Function Definitions
 # -------------------------------
 
@@ -89,14 +89,31 @@ def workspace_trajectory_planning(start_pose, target_pose, start_velocity, targe
 def move_to_target(target_lengths, sample_time):
     """
     Move the robot to the target cable lengths by computing the required steps,
-    sending the command (including sample_time information) to Arduino,
-    and updating the global current_lengths.
+    sending the command (including sample_time information) to Arduino, and then
+    waiting to receive a "DONE" message from Arduino before updating the global
+    current_lengths.
+    
+    Parameters:
+        target_lengths: list of 8 cable lengths (target values)
+        sample_time: time between trajectory samples (in ms) that is included in the command.
     """
     global current_lengths
     steps = compute_motor_steps(current_lengths, target_lengths)
     send_motor_steps(steps, sample_time)
-    time.sleep(sample_time / 1000.0)
+    
+    # Wait until Arduino sends back "DONE"
+    while True:
+        if ser.in_waiting > 0:  # Check if there's data available from Arduino
+            response = ser.readline().decode().strip()
+            if response == "DONE":
+                break
+        else:
+            # Sleep briefly to avoid busy waiting (10ms)
+            time.sleep(0.001)
+    
+    # Once "DONE" is received, update the global current_lengths
     current_lengths = target_lengths
+
 
 def execute_trajectory_workspace(start_pose, target_pose, start_velocity, target_velocity,
                                   start_acceleration, target_acceleration, T, num_samples):
