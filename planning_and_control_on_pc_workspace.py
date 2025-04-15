@@ -38,7 +38,7 @@ def compute_motor_steps(current_lengths, target_lengths, step_angle=1.8, reducti
     return steps
 
 # Initialize serial port; adjust COM port and baud rate as needed
-ser = serial.Serial('COM7', 115200)
+ser = serial.Serial('COM8', 115200)
 
 def send_motor_steps(steps, sample_time):
     """
@@ -46,9 +46,30 @@ def send_motor_steps(steps, sample_time):
     The command string now includes the sample_time information.
     Example format: "M 500 -300 200 0 100 0 -150 250;T:80\n"
     where 80 (ms) is the time interval between samples.
+    
+    After sending the actual command, an empty command (just a newline)
+    is sent immediately. This empty command helps ensure that Arduino clears
+    out the previous command from its buffer and avoids repeatedly executing
+    the same movement command.
     """
+    # Construct the command string with the sample time information.
     command = "M " + " ".join(map(str, steps)) + ";T:" + str(sample_time) + "\n"
     ser.write(command.encode())
+    while True:
+        if ser.in_waiting > 0:  # Check if there's data available from Arduino
+            response = ser.readline().decode().strip()
+            if (response == "ROGGER") or (response == "DONE"):
+                print("ROGGER CHECK")
+                ser.write("\n".encode())
+                break
+
+        else:
+            # Sleep briefly to avoid busy waiting (10ms)
+            time.sleep(0.00001)
+    # 立即发送空指令（仅发送换行符）
+
+
+
 
 def quintic_trajectory(s0, sT, v0, vT, a0, aT, T, num_samples):
     """
@@ -106,6 +127,7 @@ def move_to_target(target_lengths, sample_time):
         if ser.in_waiting > 0:  # Check if there's data available from Arduino
             response = ser.readline().decode().strip()
             if response == "DONE":
+                print("get response")
                 break
         else:
             # Sleep briefly to avoid busy waiting (10ms)
@@ -176,12 +198,12 @@ def manual_control(key_input):
     elif key_input == 'd': current_pose[1] -= delta
     elif key_input == 'q': current_pose[2] += delta
     elif key_input == 'e': current_pose[2] -= delta
-    elif key_input == 'i': current_pose[3] += delta
-    elif key_input == 'k': current_pose[3] -= delta
-    elif key_input == 'j': current_pose[4] += delta
-    elif key_input == 'l': current_pose[4] -= delta
-    elif key_input == 'u': current_pose[5] += delta
-    elif key_input == 'o': current_pose[5] -= delta
+    elif key_input == 'i': current_pose[3] += delta*3.1415926/180
+    elif key_input == 'k': current_pose[3] -= delta*3.1415926/180
+    elif key_input == 'j': current_pose[4] += delta*3.1415926/180
+    elif key_input == 'l': current_pose[4] -= delta*3.1415926/180
+    elif key_input == 'u': current_pose[5] += delta*3.1415926/180
+    elif key_input == 'o': current_pose[5] -= delta*3.1415926/180
 
     s_target = inverse_kinematics(current_pose)
     # For manual control, use a default sample time (e.g., 50 ms)
@@ -197,11 +219,34 @@ def initialize_robot():
     """
     input("Please manually move the robot to the origin and press Enter to continue...")
     ser.write(b"TIGHTEN\n")
-    print("send")
-    response = ser.readline().decode().strip()
-    if response == "TIGHTEN_OK":
-        print("Cables tightened, initialization complete!")
-    else:
+    while True:
+        if ser.in_waiting > 0:  # Check if there's data available from Arduino
+            response = ser.readline().decode().strip()
+            if response == "ROGGER":
+                ser.write("\n".encode())
+                print("send")
+                break
+        else:
+            # Sleep briefly to avoid busy waiting (10ms)
+            time.sleep(0.00001)
+    # 立即发送空指令（仅发送换行符）
+
+    wait_for_tighten_signal(5)
+
+
+def wait_for_tighten_signal(max_attempts=60):
+    success = False
+    for i in range(max_attempts*100):
+        # 如果有串口数据，尝试读取
+        if ser.in_waiting > 0:
+            response = ser.readline().decode().strip()
+            if response == "TIGHTEN_OK":
+                print("Cables tightened, initialization complete!")
+                success = True
+                break
+        # 每次尝试后等待1秒
+        time.sleep(0.01)
+    if not success:
         print("Tightening failed, please check the connection!")
 
 

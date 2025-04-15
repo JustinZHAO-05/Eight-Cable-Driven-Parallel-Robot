@@ -45,10 +45,20 @@ void loop() {
 // 指令格式示例："M 500 -300 200 0 100 0 -150 250;T:500"
 // "M" 后面依次为每个电机的步数变化，";T:" 后面为运动时间（毫秒）
 void parseCommand(String command) {
+  // 去除首尾空白字符
+  command.trim();
+  // 如果指令为空，则直接返回
+  if (command.length() == 0) {
+    return;
+  }
+
+
   if (command.startsWith("TIGHTEN")) {
+    Serial.println("ROGGER");
     tightenCables();          // 执行预紧操作
     Serial.println("TIGHTEN_OK");
   } else {
+    Serial.println("ROGGER");
     int T = 500; // 默认运动时间（毫秒）
     int motorValues[NUM_MOTORS] = {0};
 
