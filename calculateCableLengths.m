@@ -76,7 +76,7 @@ function Q = calculateCableLengths(varargin)
               + (a*cos(beta)*sin(alpha))/2;
     Term1_z = z - container_size - (a*sin(beta))/2 ...
               + (c*cos(beta)*cos(gamma))/2 + (b*cos(beta)*sin(gamma))/2;
-    Q1 = sqrt(Term1_x^2 + Term1_y^2 + Term1_z^2);
+    Q1 = sqrt(Term1_x^2 + Term1_y^2 + Term1_z^2-3.6^2);
 
     % Cable 2:
     Term2_x = x - container_size + (b*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)))/2 ...
@@ -87,7 +87,7 @@ function Q = calculateCableLengths(varargin)
     Term2_z = y - (b*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)))/2 ...
               - (c*(cos(alpha)*sin(gamma) - cos(gamma)*sin(alpha)*sin(beta)))/2 ...
               + (a*cos(beta)*sin(alpha))/2;
-    Q2 = sqrt(Term2_x^2 + Term2_y^2 + Term2_z^2);
+    Q2 = sqrt(Term2_x^2 + Term2_y^2 + Term2_z^2-3.6^2);
 
     % Cable 3:
     Term3_x = z - container_size + (a*sin(beta))/2 + (c*cos(beta)*cos(gamma))/2 - (b*cos(beta)*sin(gamma))/2;
@@ -97,7 +97,7 @@ function Q = calculateCableLengths(varargin)
     Term3_z = (b*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)))/2 ...
               - y + (c*(cos(alpha)*sin(gamma) - cos(gamma)*sin(alpha)*sin(beta))/2) ...
               + (a*cos(beta)*sin(alpha))/2;
-    Q3 = sqrt(Term3_x^2 + Term3_y^2 + Term3_z^2);
+    Q3 = sqrt(Term3_x^2 + Term3_y^2 + Term3_z^2-3.6^2);
 
     % Cable 4:
     Term4_x = container_size - y - (b*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)))/2 ...
@@ -106,7 +106,7 @@ function Q = calculateCableLengths(varargin)
     Term4_y = z - container_size + (a*sin(beta))/2 + (c*cos(beta)*cos(gamma))/2 + (b*cos(beta)*sin(gamma))/2;
     Term4_z = x - (b*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)))/2 ...
               + (c*(sin(alpha)*sin(gamma) + cos(alpha)*cos(gamma)*sin(beta))/2 - (a*cos(alpha)*cos(beta))/2);
-    Q4 = sqrt(Term4_x^2 + Term4_y^2 + Term4_z^2);
+    Q4 = sqrt(Term4_x^2 + Term4_y^2 + Term4_z^2-3.6^2);
 
     % Cable 5:
     Term5_x = container_size - x + (b*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)))/2 ...
@@ -116,7 +116,7 @@ function Q = calculateCableLengths(varargin)
               + (c*(cos(alpha)*sin(gamma) - cos(gamma)*sin(alpha)*sin(beta)))/2 ...
               + (a*cos(beta)*sin(alpha))/2;
     Term5_z = z - (a*sin(beta))/2 - (c*cos(beta)*cos(gamma))/2 + (b*cos(beta)*sin(gamma))/2;
-    Q5 = sqrt(Term5_x^2 + Term5_y^2 + Term5_z^2);
+    Q5 = sqrt(Term5_x^2 + Term5_y^2 + Term5_z^2-3.6^2);
 
     % Cable 6:
     Term6_x = x - container_size + (b*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)))/2 ...
@@ -126,7 +126,7 @@ function Q = calculateCableLengths(varargin)
               + (c*(cos(alpha)*sin(gamma) - cos(gamma)*sin(alpha)*sin(beta)))/2 ...
               + (a*cos(beta)*sin(alpha))/2;
     Term6_z = (a*sin(beta))/2 - z + (c*cos(beta)*cos(gamma))/2 + (b*cos(beta)*sin(gamma))/2;
-    Q6 = sqrt(Term6_x^2 + Term6_y^2 + Term6_z^2);
+    Q6 = sqrt(Term6_x^2 + Term6_y^2 + Term6_z^2-3.6^2);
 
     % Cable 7:
     Term7_x = x + (b*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)))/2 ...
@@ -136,7 +136,7 @@ function Q = calculateCableLengths(varargin)
               + (c*(cos(alpha)*sin(gamma) - cos(gamma)*sin(alpha)*sin(beta)))/2 ...
               - (a*cos(beta)*sin(alpha))/2;
     Term7_z = z + (a*sin(beta))/2 - (c*cos(beta)*cos(gamma))/2 - (b*cos(beta)*sin(gamma))/2;
-    Q7 = sqrt(Term7_x^2 + Term7_y^2 + Term7_z^2);
+    Q7 = sqrt(Term7_x^2 + Term7_y^2 + Term7_z^2-3.6^2);
 
     % Cable 8:
     Term8_x = y - container_size + (b*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)))/2 ...
@@ -145,7 +145,7 @@ function Q = calculateCableLengths(varargin)
     Term8_y = z + (a*sin(beta))/2 - (c*cos(beta)*cos(gamma))/2 + (b*cos(beta)*sin(gamma))/2;
     Term8_z = (b*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)))/2 - x + ...
               (c*(sin(alpha)*sin(gamma) + cos(alpha)*cos(gamma)*sin(beta)))/2 + (a*cos(alpha)*cos(beta))/2;
-    Q8 = sqrt(Term8_x^2 + Term8_y^2 + Term8_z^2);
+    Q8 = sqrt(Term8_x^2 + Term8_y^2 + Term8_z^2-3.6^2);
 
     % Combine the eight cable lengths into an 8x1 column vector
     Q = [Q1; Q2; Q3; Q4; Q5; Q6; Q7; Q8];

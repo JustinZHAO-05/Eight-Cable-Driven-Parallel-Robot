@@ -114,18 +114,17 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
     % Compute the cable direction unit vectors (u) for each cable:
     % u_i = (B_i - p_i) / norm(B_i - p_i)
     u = zeros(3,8);
-    for i = 1:8
+    for i = 1:4
         former_vec = B(:,i) - p(:,i);
         formerlength = norm(former_vec);
         delta = asin(r/formerlength);
-        [ss,pp,hh] = cart2sph_custom(former_vec(1),former_vec(2),former_vec(3));
+        [ss,pp,hh] = cart2sph_custom(diff_vec(1),diff_vec(2),diff_vec(3));
         if i <= 4
-            newsph = [ss,pp+delta,hh]
+            newsph = [ss,pp+delta,hh];
         else
-            newsph = [ss,pp-delta,hh]
+            newsph = [ss,pp-delta,hh];
         end
-        [xx,yy,zz] = sph2cart_custom(newsph(1),newsph(2),newsph(3));
-        diff_vec = [xx,yy,zz];
+        diff_vec = sph2cart_custom(newsph(1),newsph(2),newsph(3));
         u(:,i) = diff_vec / norm(diff_vec);
     end
     

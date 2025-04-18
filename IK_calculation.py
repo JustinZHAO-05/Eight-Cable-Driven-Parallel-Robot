@@ -29,7 +29,7 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
               + (a*np.cos(beta)*np.sin(alpha))/2
     Term1_z = z - container_size - (a*np.sin(beta))/2 \
               + (c*np.cos(beta)*np.cos(gamma))/2 + (b*np.cos(beta)*np.sin(gamma))/2
-    Q1 = np.sqrt(Term1_x**2 + Term1_y**2 + Term1_z**2)
+    Q1 = np.sqrt(Term1_x**2 + Term1_y**2 + Term1_z**2 - 3.6**2)
     
     # Cable 2
     Term2_x = x - container_size + (b*(np.cos(gamma)*np.sin(alpha) - np.cos(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
@@ -40,7 +40,7 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
     Term2_z = y - (b*(np.cos(alpha)*np.cos(gamma) + np.sin(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
               - (c*(np.cos(alpha)*np.sin(gamma) - np.cos(gamma)*np.sin(alpha)*np.sin(beta)))/2 \
               + (a*np.cos(beta)*np.sin(alpha))/2
-    Q2 = np.sqrt(Term2_x**2 + Term2_y**2 + Term2_z**2)
+    Q2 = np.sqrt(Term2_x**2 + Term2_y**2 + Term2_z**2 - 3.6**2)
     
     # Cable 3
     Term3_x = z - container_size + (a*np.sin(beta))/2 \
@@ -51,7 +51,7 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
     Term3_z = (b*(np.cos(alpha)*np.cos(gamma) + np.sin(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
               - y + (c*(np.cos(alpha)*np.sin(gamma) - np.cos(gamma)*np.sin(alpha)*np.sin(beta)))/2 \
               + (a*np.cos(beta)*np.sin(alpha))/2
-    Q3 = np.sqrt(Term3_x**2 + Term3_y**2 + Term3_z**2)
+    Q3 = np.sqrt(Term3_x**2 + Term3_y**2 + Term3_z**2 - 3.6**2)
     
     # Cable 4
     Term4_x = container_size - y - (b*(np.cos(alpha)*np.cos(gamma) + np.sin(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
@@ -62,7 +62,7 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
     Term4_z = x - (b*(np.cos(gamma)*np.sin(alpha) - np.cos(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
               + (c*(np.sin(alpha)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma)*np.sin(beta)))/2 \
               - (a*np.cos(alpha)*np.cos(beta))/2
-    Q4 = np.sqrt(Term4_x**2 + Term4_y**2 + Term4_z**2)
+    Q4 = np.sqrt(Term4_x**2 + Term4_y**2 + Term4_z**2 - 3.6**2)
     
     # Cable 5
     Term5_x = container_size - x + (b*(np.cos(gamma)*np.sin(alpha) - np.cos(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
@@ -72,7 +72,7 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
               + (c*(np.cos(alpha)*np.sin(gamma) - np.cos(gamma)*np.sin(alpha)*np.sin(beta)))/2 \
               + (a*np.cos(beta)*np.sin(alpha))/2
     Term5_z = z - (a*np.sin(beta))/2 - (c*np.cos(beta)*np.cos(gamma))/2 + (b*np.cos(beta)*np.sin(gamma))/2
-    Q5 = np.sqrt(Term5_x**2 + Term5_y**2 + Term5_z**2)
+    Q5 = np.sqrt(Term5_x**2 + Term5_y**2 + Term5_z**2 - 3.6**2)
     
     # Cable 6
     Term6_x = x - container_size + (b*(np.cos(gamma)*np.sin(alpha) - np.cos(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
@@ -82,7 +82,7 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
               + (c*(np.cos(alpha)*np.sin(gamma) - np.cos(gamma)*np.sin(alpha)*np.sin(beta)))/2 \
               + (a*np.cos(beta)*np.sin(alpha))/2
     Term6_z = (a*np.sin(beta))/2 - z + (c*np.cos(beta)*np.cos(gamma))/2 + (b*np.cos(beta)*np.sin(gamma))/2
-    Q6 = np.sqrt(Term6_x**2 + Term6_y**2 + Term6_z**2)
+    Q6 = np.sqrt(Term6_x**2 + Term6_y**2 + Term6_z**2 - 3.6**2)
     
     # Cable 7
     Term7_x = x + (b*(np.cos(gamma)*np.sin(alpha) - np.cos(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
@@ -92,7 +92,7 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
               + (c*(np.cos(alpha)*np.sin(gamma) - np.cos(gamma)*np.sin(alpha)*np.sin(beta)))/2 \
               - (a*np.cos(beta)*np.sin(alpha))/2
     Term7_z = z + (a*np.sin(beta))/2 - (c*np.cos(beta)*np.cos(gamma))/2 - (b*np.cos(beta)*np.sin(gamma))/2
-    Q7 = np.sqrt(Term7_x**2 + Term7_y**2 + Term7_z**2)
+    Q7 = np.sqrt(Term7_x**2 + Term7_y**2 + Term7_z**2 - 3.6**2)
     
     # Cable 8
     Term8_x = y - container_size + (b*(np.cos(alpha)*np.cos(gamma) + np.sin(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
@@ -102,7 +102,7 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
     Term8_z = (b*(np.cos(gamma)*np.sin(alpha) - np.cos(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
               - x + (c*(np.sin(alpha)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma)*np.sin(beta)))/2 \
               + (a*np.cos(alpha)*np.cos(beta))/2
-    Q8 = np.sqrt(Term8_x**2 + Term8_y**2 + Term8_z**2)
+    Q8 = np.sqrt(Term8_x**2 + Term8_y**2 + Term8_z**2 - 3.6**2)
     
     # Combine the eight cable lengths into an 1x8 array.
     Q = [Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8]
