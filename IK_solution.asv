@@ -27,10 +27,10 @@ CV = [cv1, cv2, cv3, cv4, cv5, cv6, cv7, cv8];
 
 %% Define platform mounting points relative to the platform center (MAV)
 % The platform is assumed to be a rectangular box.
-av1 = [hl;  hw-1.5;  hh];
-av2 = [hl; -hw+1.5;  hh];
-av3 = [-hl; -hw+1.5;  hh];
-av4 = [-hl;  hw-1.5;  hh];
+av1 = [hl;  hw;  hh];
+av2 = [hl; -hw;  hh];
+av3 = [-hl; -hw;  hh];
+av4 = [-hl;  hw;  hh];
 av5 = [hl;  hw; -hh];
 av6 = [hl; -hw; -hh];
 av7 = [-hl; -hw; -hh];

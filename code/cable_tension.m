@@ -86,8 +86,8 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
     W = [F_ext; M_ext];
     
     %%----------------以下部分请手动注释掉---------------
-    disp('External Force F_ext (N):'); disp(F_ext);
-    disp('External Moment M_ext (N·m):'); disp(M_ext);
+    %disp('External Force F_ext (N):'); disp(F_ext);
+    %disp('External Moment M_ext (N·m):'); disp(M_ext);
 %%---------------------------------------------------------
 
 
@@ -188,26 +188,24 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
     
     %% ----------------------------以下部分请手动注释掉
     %% (Optional) Plot comparison between actual external wrench and estimated wrench
-    W_est = A * T_cable;
-    figure;
-    subplot(2,1,1);
-    stem(W(1:3), 'filled'); title('External Force F_{ext}');
-    subplot(2,1,2);
-    stem(W(4:6), 'filled'); title('External Moment M_{ext}');
+    %W_est = A * T_cable;
+    %figure;
+    %subplot(2,1,1);
+    %stem(W(1:3), 'filled'); title('External Force F_{ext}');
+    %subplot(2,1,2);
+    %stem(W(4:6), 'filled'); title('External Moment M_{ext}');
     
-    figure;
-    subplot(2,1,1);
-    stem(W_est(1:3), 'filled'); title('Estimated Force (A*T)');
-    subplot(2,1,2);
-    stem(W_est(4:6), 'filled'); title('Estimated Moment (A*T)');
+    %figure;
+    %subplot(2,1,1);
+    %stem(W_est(1:3), 'filled'); title('Estimated Force (A*T)');
+    %subplot(2,1,2);
+    %stem(W_est(4:6), 'filled'); title('Estimated Moment (A*T)');
     %% ---------------------------------------------------------
 
 
 
     % Ensure output is a double precision 8x1 vector.
     T_cable = double(T_cable);
-    disp('Calculated cable tensions (N):');
-    disp(T_cable);
 end
 
 

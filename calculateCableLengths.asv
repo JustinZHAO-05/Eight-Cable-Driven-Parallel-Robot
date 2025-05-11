@@ -22,7 +22,16 @@ function Q = calculateCableLengths(varargin)
 %       Q              : An 8x1 vector of cable lengths (each element corresponds
 %                        to one cable's length), computed using the derived formulas.
 %
-
+%   Note:
+%       The following formulas were derived from the geometric relationships
+%       between the container's corner positions and the transformed mounting
+%       points on the platform. Each cable length is computed as:
+%
+%         Q_i = sqrt( (Term_i_x)^2 + (Term_i_y)^2 + (Term_i_z)^2 ),
+%
+%       where the terms involve x, y, z, container_size, a, b, c and the Euler
+%       angles (alpha, beta, gamma). Verify these formulas carefully against your
+%       derivation.
 
     % Determine the number of input arguments and assign default values if needed.
     if nargin < 6
@@ -158,12 +167,12 @@ end
      %cm,cm,cm,rad,rad,rad
 
 %output
-% (q1      cm
-%   q2     cm
- %  q3      .
-  % q4        .
-   %q5    .
-   %q6
-   %q7
-   %q8)
+% (q1
+%   q2
+ %  q3
+   q4
+   q5
+   q6
+   q7
+   q8)
 

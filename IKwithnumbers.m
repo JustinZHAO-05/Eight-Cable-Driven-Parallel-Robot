@@ -4,7 +4,12 @@ clear;
 %% Define symbolic parameters for the robot dimensions
 % 'a', 'b', 'c' are the platform dimensions (length, width, height)
 % 'container_size' is the side length of the cubic container
-syms a b c container_size real;
+%syms a b c container_size real;
+
+a = 7.5;
+b=7.5;
+c= 9 ;
+container_size = 60 ;
 
 % Compute half-dimensions of the platform (used to determine mounting points)
 hl = a/2;
@@ -27,22 +32,30 @@ CV = [cv1, cv2, cv3, cv4, cv5, cv6, cv7, cv8];
 
 %% Define platform mounting points relative to the platform center (MAV)
 % The platform is assumed to be a rectangular box.
-av1 = [hl;  hw-1.5;  hh];
-av2 = [hl; -hw+1.5;  hh];
-av3 = [-hl; -hw+1.5;  hh];
-av4 = [-hl;  hw-1.5;  hh];
+av1 = [hl;  hw;  hh];
+av2 = [hl; -hw;  hh];
+av3 = [-hl; -hw;  hh];
+av4 = [-hl;  hw;  hh];
 av5 = [hl;  hw; -hh];
 av6 = [hl; -hw; -hh];
 av7 = [-hl; -hw; -hh];
 av8 = [-hl;  hw; -hh];
 
 % MAV is a 3x8 matrix; each column is the mounting point (relative vector)
-MAV = [av5, av6, av7, av8, av1, av2, av3, av4];
+MAV = [av1, av2, av3, av4, av5, av6, av7, av8];
 
 %% Define symbolic variables for the platform pose (in the workspace)
 % Pose: [x, y, z, roll, pitch, yaw]
 syms x y z real;
 syms alpha beta gamma real;  % Euler angles (roll, pitch, yaw) in ZYX order
+
+x =30;
+y=30;
+z=30;
+
+alpha = 1.0;
+beta = 0 ;
+gamma = 0;
 
 %% Build the platform pose transformation matrix
 % WTM: Translation vector as a column vector
@@ -67,6 +80,3 @@ WAV = exWAV(1:3, :);
 Q = sqrt(sum((CV - WAV).^2, 1)).';
 disp('Cable lengths Q:');
 disp(Q);
-
-
-

@@ -11,6 +11,10 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
 %       euler_dot       : Euler angular velocity vector [dot_phi; dot_theta; dot_psi] (rad/s)
 %       euler_ddot      : Euler angular acceleration vector [ddot_phi; ddot_theta; ddot_psi] (rad/s^2)
 %
+%  输入很抽象！！！！   x (m), y(m), z(m), roll(rad)(绕x轴）, pitch（绕y轴）,yaw（绕z轴），平动加速度列向量[a_x;a_y;a_z](m/s^2),欧拉角速度列向量[v_roll;v_pitch;v_yaw](rad/s),欧拉角加速度列向量[a_roll;a_pitch;a_yaw](rad/s^2)
+%
+% 输出为列向量，有上到下为八根绳的张力
+%
 %   The function uses default values for other parameters:
 %       Platform mass, m = 1.2 kg
 %       Gravitational acceleration, g = [0; 0; -9.81] m/s^2
@@ -33,7 +37,7 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
     %% Parameter Setup (Platform Dynamics)
     m = 1.2;                  % Platform mass (kg)
     g = [0; 0; -9.81];        % Gravitational acceleration (m/s^2)
-    I = diag([0.5, 0.5, 1]);   % Inertia matrix of the platform (kg·m^2)
+    I = diag([1.2314, 1.219531, 0.740019]);   % Inertia matrix of the platform (kg·m^2)
     
     % a_dyn, euler_dot, euler_ddot are provided as input parameters.
     
@@ -41,7 +45,7 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
     %% Step 1: Calculate External Force and Moment on the Platform
     % Compute the external translational force:
     % F_ext = m * (platform acceleration + gravitational acceleration)
-    F_ext = m * (a_dyn + g);
+    F_ext = m * (a_dyn - g);
     
     % Set up Euler angles: roll (phi), pitch (theta), and yaw (psi)
     phi = roll; 
@@ -81,8 +85,13 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
     % Combine the translational force and moment into a 6x1 external wrench vector W.
     W = [F_ext; M_ext];
     
+    %%----------------以下部分请手动注释掉---------------
     disp('External Force F_ext (N):'); disp(F_ext);
     disp('External Moment M_ext (N·m):'); disp(M_ext);
+%%---------------------------------------------------------
+
+
+
     
     %% ----------------------------
     %% Step 2: Construct Equilibrium Matrix A (6x8)
@@ -105,28 +114,32 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
     % of the platform given its center and orientation.
     % The input scaling (multiplying by 100 and then dividing by 100) ensures unit consistency.
     p = corner_positions(x*100, y*100, z*100, yaw, pitch, roll) ./ 100;
+    p_mount = [p(:,5),p(:,6),p(:,7),p(:,8),p(:,1),p(:,2),p(:,3),p(:,4)];
     
     % For this analysis, container anchor points B are set equal to CV.
     B = CV;
 
-    r = 3.6/100 ; 
+    r_wheel = 3.6/100 ; 
     
     % Compute the cable direction unit vectors (u) for each cable:
     % u_i = (B_i - p_i) / norm(B_i - p_i)
     u = zeros(3,8);
-    for i = 1:4
+    for i = 1:8
         former_vec = B(:,i) - p(:,i);
         formerlength = norm(former_vec);
-        delta = asin(r/formerlength);
-        [ss,pp,hh] = cart2sph_custom(diff_vec(1),diff_vec(2),diff_vec(3));
+        delta = asin(r_wheel/formerlength);
+        [ss,pp,hh] = cart2sph_custom(former_vec(1),former_vec(2),former_vec(3));
         if i <= 4
             newsph = [ss,pp+delta,hh];
         else
             newsph = [ss,pp-delta,hh];
         end
-        diff_vec = sph2cart_custom(newsph(1),newsph(2),newsph(3));
+        [xx,yy,zz] = sph2cart_custom(newsph(1),newsph(2),newsph(3));
+        diff_vec = [xx,yy,zz];
         u(:,i) = diff_vec / norm(diff_vec);
     end
+
+  %  disp(u);
     
     % Define the platform center (translation vector)
     center = [x; y; z];
@@ -136,6 +149,8 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
     for i = 1:8
         r(:,i) = p(:,i) - center;
     end
+
+   % disp(r);
     
     % Construct the equilibrium matrix A (6x8):
     % The top 3 rows consist of the cable direction unit vectors u_i.
@@ -150,26 +165,47 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
     %% Step 3: Solve for Cable Tensions using Regularized Least Squares
     % Solve A*T = W for the cable tensions T (an 8x1 vector) using Tikhonov regularization.
     lambda = 1e-3;  % Regularization parameter (adjust as needed)
-    T_cable = (A' * A + lambda * eye(size(A,2))) \ (A' * W);
+    %T_cable = (A' * A + lambda * eye(size(A,2))) \ (A' * W);
+
+    % A*T = W, 强制 T >= 0
+    %T_cable = lsqnonneg(A, W);
+
+    H = A'*A + lambda*eye(8);
+    f = -A'*W;
+    % 下界 T >= 0
+    T_cable = quadprog(H, f, [], [], [], [], zeros(8,1), []);
+
+
+
     
-    disp('Calculated cable tensions (N):');
-    disp(T_cable);
+
     
-    %% ----------------------------
+    %disp('Calculated cable tensions (N):');
+    %disp(T_cable);
+    
+    %% ----------------------------以下部分请手动注释掉
     %% (Optional) Plot comparison between actual external wrench and estimated wrench
-    W_est = A * T_cable;
-    figure;
-    subplot(2,1,1);
-    stem(W(1:3), 'filled'); title('External Force F_{ext}');
-    subplot(2,1,2);
-    stem(W(4:6), 'filled'); title('External Moment M_{ext}');
+    %W_est = A * T_cable;
+    %figure;
+    %subplot(2,1,1);
+    %stem(W(1:3), 'filled'); title('External Force F_{ext}');
+    %subplot(2,1,2);
+    %stem(W(4:6), 'filled'); title('External Moment M_{ext}');
     
-    figure;
-    subplot(2,1,1);
-    stem(W_est(1:3), 'filled'); title('Estimated Force (A*T)');
-    subplot(2,1,2);
-    stem(W_est(4:6), 'filled'); title('Estimated Moment (A*T)');
-    
+    %figure;
+    %subplot(2,1,1);
+    %stem(W_est(1:3), 'filled'); title('Estimated Force (A*T)');
+    %subplot(2,1,2);
+    %stem(W_est(4:6), 'filled'); title('Estimated Moment (A*T)');
+    %% ---------------------------------------------------------
+
+
+
     % Ensure output is a double precision 8x1 vector.
     T_cable = double(T_cable);
 end
+
+
+%  输入很抽象！！！！   x (m), y(m), z(m), roll(rad)(绕x轴）, pitch（绕y轴）,yaw（绕z轴），平动加速度列向量[a_x;a_y;a_z](m/s^2),欧拉角速度列向量[v_roll;v_pitch;v_yaw](rad/s),欧拉角加速度列向量[a_roll;a_pitch;a_yaw](rad/s^2)
+%
+% 输出为列向量，有上到下为八根绳的张力

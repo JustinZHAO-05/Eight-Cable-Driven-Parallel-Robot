@@ -2,6 +2,7 @@
 import serial
 import numpy as np
 import time
+import math
 from IK_calculation import calculate_cable_lengths 
 # -------------------------------
 # Global Variables: Robot State
@@ -251,7 +252,7 @@ def wait_for_tighten_signal(max_attempts=60):
 
 
 
-import math
+
 
 def convert_angles_deg_to_rad(lst):
     """
