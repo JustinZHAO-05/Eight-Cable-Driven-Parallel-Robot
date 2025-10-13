@@ -96,17 +96,19 @@ function T_cable = cable_tension(x, y, z, roll, pitch, yaw, a_dyn, euler_dot, eu
     %% ----------------------------
     %% Step 2: Construct Equilibrium Matrix A (6x8)
     % Container parameters: set container side length (m)
-    container_size = 0.6;
+    container_size_x = 0.68;
+    container_size_y = 0.56;
+    container_size_z = 0.66;
     
     % Define the container's anchor points (CV) as the eight corners of a cube.
-    cv1 = [container_size; container_size; container_size];
-    cv2 = [container_size; 0; container_size];
-    cv3 = [0; 0; container_size];
-    cv4 = [0; container_size; container_size];
-    cv5 = [container_size; container_size; 0];
-    cv6 = [container_size; 0; 0];
+    cv1 = [container_size_x; container_size_y; container_size_z];
+    cv2 = [container_size_x; 0; container_size_z];
+    cv3 = [0; 0; container_size_z];
+    cv4 = [0; container_size_y; container_size_z];
+    cv5 = [container_size_x; container_size_y; 0];
+    cv6 = [container_size_x; 0; 0];
     cv7 = [0; 0; 0];
-    cv8 = [0; container_size; 0];
+    cv8 = [0; container_size_y; 0];
     CV = [cv1, cv2, cv3, cv4, cv5, cv6, cv7, cv8];
     
     % Calculate platform mounting point positions using an auxiliary function.

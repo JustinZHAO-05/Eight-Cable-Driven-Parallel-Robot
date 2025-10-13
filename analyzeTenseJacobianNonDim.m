@@ -30,7 +30,6 @@ function [J_inv, singular_vals, cond_number] = analyzeTenseJacobianNonDim(x0,  d
     J  = zeros(8,6);
 
     
-
     for i = 1:6
         x1_temp    = x0;
         

@@ -8,9 +8,9 @@ from IK_calculation import calculate_cable_lengths
 # Global Variables: Robot State
 # -------------------------------
 # current_pose: [x, y, z, roll, pitch, yaw]
-current_pose = [0, 0, 0, 0, 0, 0] #cm
+current_pose = [34, 28, -5, 0, 0, 0] #cm
 # current_lengths: cable lengths for 8 cables
-current_lengths = [0] * 8  
+current_lengths = [84.79,84.79,84.79,84.79,39.01,39.01,39.01,39.01]  
 
 # ------------------------------- 
 # Function Definitions
@@ -24,24 +24,96 @@ def inverse_kinematics(target_pose):
     target_lengths = calculate_cable_lengths(target_pose)
     return target_lengths
 
-def compute_motor_steps(current_lengths, target_lengths, step_angle=1.8, reduction_ratio=1, drum_radius=3.5): #cm
+def compute_motor_degrees_speed(current_lengths, target_lengths, sample_time, reduction_ratio=1, drum_radius=0.4): #cm
     """
     Compute the number of steps required for each motor based on the change in cable length.
     Returns a list of 8 integer step values.
     """
-    steps = []
+    
+    commands = []
+
     for i in range(8):
+        CONTROL_ID = i 
         delta_s = target_lengths[i] - current_lengths[i]  # Change in cable length
-        steps_per_revolution = 360 / step_angle
         length_per_rev = 2 * np.pi * drum_radius
-        delta_steps = (delta_s / length_per_rev) * steps_per_revolution * reduction_ratio
-        steps.append(int(delta_steps))
-    return steps
+        delta_degrees = (delta_s / length_per_rev) * 360 * reduction_ratio
+        if delta_degrees >= 0:
+            pos = int(delta_degrees * 10)
+            degrees_h=(pos >> 8) & 0xFF
+            degrees_l=pos & 0xFF
+            if i==1 or i==3 or i ==5 or i == 7:
+                DIR = 0x01
+            else:
+                DIR = 0x00
+            spd = int((math.radians(delta_degrees)/sample_time) * 10)
+            speeds_h=(spd >> 8) & 0xFF
+            speeds_l=spd & 0xFF
+            frame = [
+            HEADER,
+            CONTROL_ID,
+            MODE,
+            DIR,
+            MICROSTEP,
+            degrees_h, degrees_l,
+            speeds_h, speeds_l
+            ]
+            bcc = 0
+            for b in frame:
+                bcc ^= b
+            # 完整帧：9 字节 + BCC + 帧尾
+            frame.append(bcc)
+            frame.append(0x7D)  # 帧尾
+            commands.append(bytes(frame))
+
+        else:
+            pos = int(-delta_degrees * 10)
+            degrees_h=(pos >> 8) & 0xFF
+            degrees_l=pos & 0xFF
+            if i ==1 or i == 3 or i == 5 or i == 7 :
+                DIR = 0x00
+            else:
+                DIR= 0x01
+            spd = int((math.radians(-delta_degrees)/sample_time) * 10)
+            speeds_h=(spd >> 8) & 0xFF
+            speeds_l=spd & 0xFF
+            frame = [
+            HEADER,
+            CONTROL_ID,
+            MODE,
+            DIR,
+            MICROSTEP,
+            degrees_h, degrees_l,
+            speeds_h, speeds_l
+            ]
+            bcc = 0
+            for b in frame:
+                bcc ^= b
+            # 完整帧：9 字节 + BCC + 帧尾
+            frame.append(bcc)
+            frame.append(TAIL)  # 帧尾
+            commands.append(bytes(frame))
+
+
+    return commands
 
 # Initialize serial port; adjust COM port and baud rate as needed
-ser = serial.Serial('COM8', 115200)
+ser0 = serial.Serial('COM11', 115200)
+ser1 = serial.Serial('COM16', 115200)
+ser2 = serial.Serial('COM13', 115200)
+ser3 = serial.Serial('COM10', 115200)
+ser4 = serial.Serial('COM14', 115200)
+ser5 = serial.Serial('COM9', 115200)
+ser6 = serial.Serial('COM12', 115200)
+ser7 = serial.Serial('COM15', 115200)
 
-def send_motor_steps(steps, sample_time):
+SER = [ser0,ser1,ser2,ser3,ser4,ser5,ser6,ser7]
+
+HEADER     = 0x7B   # 帧头
+MODE       = 0x02   # 0x02 = 位置控制模式
+MICROSTEP  = 0x20   # 0x20 = 32细分
+TAIL      = 0x7D
+
+def send_motor(commands):
     """
     Convert the step command to a string and send it over serial to Arduino.
     The command string now includes the sample_time information.
@@ -54,20 +126,12 @@ def send_motor_steps(steps, sample_time):
     the same movement command.
     """
     # Construct the command string with the sample time information.
-    command = "M " + " ".join(map(str, steps)) + ";T:" + str(sample_time) + "\n"
-    ser.write(command.encode())
-    while True:
-        if ser.in_waiting > 0:  # Check if there's data available from Arduino
-            response = ser.readline().decode().strip()
-            if (response == "ROGGER") or (response == "DONE"):
-                print("ROGGER CHECK")
-                ser.write("\n".encode())
-                break
+    for i in range(8):
+        print(commands[i])
+        SER[i].write(commands[i])
+    
+    return
 
-        else:
-            # Sleep briefly to avoid busy waiting (10ms)
-            time.sleep(0.00001)
-    # 立即发送空指令（仅发送换行符）
 
 
 
@@ -110,32 +174,51 @@ def workspace_trajectory_planning(start_pose, target_pose, start_velocity, targe
 
 def move_to_target(target_lengths, sample_time):
     """
-    Move the robot to the target cable lengths by computing the required steps,
-    sending the command (including sample_time information) to Arduino, and then
-    waiting to receive a "DONE" message from Arduino before updating the global
-    current_lengths.
-    
-    Parameters:
-        target_lengths: list of 8 cable lengths (target values)
-        sample_time: time between trajectory samples (in ms) that is included in the command.
+    Move the robot to the target cable lengths by
+    1) 计算每路命令帧
+    2) 发送给 8 台电机
+    3) 等待每台电机在位置控制模式下的“到位”反馈
+    4) 更新 current_lengths
+
+    target_lengths: list of 8 floats, 目标绳长 (cm)
+    sample_time    : 间隔时间 (ms)，用于计算帧内速度字段
     """
     global current_lengths
-    steps = compute_motor_steps(current_lengths, target_lengths)
-    send_motor_steps(steps, sample_time)
-    
-    # Wait until Arduino sends back "DONE"
-    while True:
-        if ser.in_waiting > 0:  # Check if there's data available from Arduino
-            response = ser.readline().decode().strip()
-            if response == "DONE":
-                print("get response")
-                break
-        else:
-            # Sleep briefly to avoid busy waiting (10ms)
-            time.sleep(0.001)
-    
-    # Once "DONE" is received, update the global current_lengths
-    current_lengths = target_lengths
+
+    # 1) 计算所有电机的命令帧
+    commands = compute_motor_degrees_speed(current_lengths,
+                                           target_lengths,
+                                           (sample_time-15)/1000.0)
+
+    # 2) 并行写入 8 个串口
+    send_motor(commands)
+
+    print("write done")
+
+    #3) 握手确认：等待每台电机发 9 字节反馈，且反馈第二字节=0x01（表示到达目标）
+    # reached = [False] * 8
+    # while not all(reached):
+    #     for idx, ser in enumerate(SER):
+    #         if idx == 0: 
+    #             reached[idx] = 1
+    #         # 如果有至少 9 字节待读
+    #         elif ser.in_waiting >= 9:
+    #             data = ser.read(9)
+    #             # 校验帧长度
+    #             if len(data) != 9:
+    #                 continue
+    #             addr = data[0]      # 电机地址 0…7
+    #             status = data[1]    # 在位置控制下，到位=0x01，未到=0x00
+    #             # 只标记本地址为到位
+    #             if status == 0x01 and 0 <= addr <= 7:
+    #                 reached[addr] = True
+    #     # 非阻塞短暂休眠，防止 busy‐wait
+    #     time.sleep(0.001)
+    time.sleep((sample_time-15)/1000.0)
+
+    # 4) 全部到位后，更新状态
+    current_lengths = target_lengths.copy()
+
 
 
 def execute_trajectory_workspace(start_pose, target_pose, start_velocity, target_velocity,
@@ -161,13 +244,15 @@ def execute_trajectory_workspace(start_pose, target_pose, start_velocity, target
         length0.append((start_pose[i]-current_pose[i])**2)
     T0 = int(float(np.sqrt(length0[0]+length0[1]+length0[2]+length0[3]+length0[4]+length0[5]))/3*1000)
 
+    print('T0=',T0/1000,"s")
+
     # Move to the starting pose
     s_start = inverse_kinematics(start_pose)
     # Compute sample time (in ms) between trajectory points
     sample_time = int((T * 1000) / num_samples)
     move_to_target(s_start, T0)
     current_pose = start_pose.copy()
-    print("\nCurrent pose:", current_pose)
+    print("\nCurrent pose:", convert_angles_rad_to_deg(current_pose))
     print("Current cable lengths:", current_lengths)
     
     # Generate workspace trajectory (each point is a 6D pose)
@@ -180,11 +265,61 @@ def execute_trajectory_workspace(start_pose, target_pose, start_velocity, target
     for pose in pose_traj:
         con_traj.append(inverse_kinematics(pose))
 
+    input("start now?")
+
     for i in range(num_samples):
         move_to_target(con_traj[i], sample_time)
         current_pose = pose_traj[i]  # Update current pose
         print("\nCurrent pose:", convert_angles_rad_to_deg(current_pose))
         print("Current cable lengths:", current_lengths)
+
+
+def trajectory_workspace_serial(start_pose, target_pose, start_velocity, target_velocity,
+                                  start_acceleration, target_acceleration, T, num_samples):
+    """
+    Plan and execute a workspace trajectory:
+      1. Move to the starting pose (via inverse kinematics).
+      2. Generate a trajectory in the workspace, and for each trajectory point, compute the 
+         corresponding cable lengths (IK) and send commands.
+         Each command includes the sample time between trajectory points.
+    """
+    global current_pose, current_lengths
+    
+    start_pose = convert_angles_deg_to_rad(start_pose)
+    target_pose = convert_angles_deg_to_rad(target_pose)
+    start_velocity = convert_angles_deg_to_rad(start_velocity)
+    target_velocity = convert_angles_deg_to_rad(target_velocity)
+    start_acceleration = convert_angles_deg_to_rad(start_acceleration)
+    target_acceleration = convert_angles_deg_to_rad(target_acceleration)
+
+    print("\nCurrent pose:", convert_angles_rad_to_deg(current_pose))
+    print("Current cable lengths:", current_lengths)
+    
+    # Generate workspace trajectory (each point is a 6D pose)
+    pose_traj = workspace_trajectory_planning(start_pose, target_pose, start_velocity,
+                                              target_velocity, start_acceleration, target_acceleration,
+                                              T, num_samples)
+    # For each pose point, compute IK and move
+    con_traj = []
+
+    for pose in pose_traj:
+        con_traj.append(inverse_kinematics(pose))
+    sample_time = int((T * 1000) / num_samples)
+    return pose_traj,con_traj,sample_time,num_samples
+
+
+
+def execute_traj_serial(pose_traj_serial,trajs_serial,sample_time,num_samples):
+
+    global current_lengths,current_pose
+
+    for j in range(len(trajs_serial)):
+        for i in range(num_samples[j]):
+            move_to_target(trajs_serial[j][i], sample_time[j])
+            current_pose = pose_traj_serial[j][i]  # Update current pose
+            print(current_pose)
+            print("\nCurrent pose:", convert_angles_rad_to_deg(current_pose))
+            print("Current cable lengths:", current_lengths)
 
 def manual_control(key_input):
     """
@@ -192,25 +327,92 @@ def manual_control(key_input):
     then compute the new target cable lengths and move to that pose.
     """
     global current_pose
+    global current_lengths
     delta = 1  # Pose increment
     if key_input == 'w': current_pose[0] += delta
     elif key_input == 's': current_pose[0] -= delta
     elif key_input == 'a': current_pose[1] += delta
     elif key_input == 'd': current_pose[1] -= delta
-    elif key_input == 'q': current_pose[2] += delta
-    elif key_input == 'e': current_pose[2] -= delta
-    elif key_input == 'i': current_pose[3] += delta*3.1415926/180
-    elif key_input == 'k': current_pose[3] -= delta*3.1415926/180
-    elif key_input == 'j': current_pose[4] += delta*3.1415926/180
-    elif key_input == 'l': current_pose[4] -= delta*3.1415926/180
-    elif key_input == 'u': current_pose[5] += delta*3.1415926/180
-    elif key_input == 'o': current_pose[5] -= delta*3.1415926/180
+    elif key_input == 'q': current_pose[2] += 3*delta
+    elif key_input == 'e': current_pose[2] -= 3*delta
+    elif key_input == 'i': current_pose[3] += 4*delta*3.1415926/180
+    elif key_input == 'k': current_pose[3] -= 4*delta*3.1415926/180
+    elif key_input == 'j': current_pose[4] += 2*delta*3.1415926/180
+    elif key_input == 'l': current_pose[4] -= 2*delta*3.1415926/180
+    elif key_input == 'u': current_pose[5] += 2*delta*3.1415926/180
+    elif key_input == 'o': current_pose[5] -= 2*delta*3.1415926/180
 
     s_target = inverse_kinematics(current_pose)
     # For manual control, use a default sample time (e.g., 50 ms)
     move_to_target(s_target, 50)
     print("\nCurrent pose:", convert_angles_rad_to_deg(current_pose))
     print("Current cable lengths:", current_lengths)
+
+
+
+# 串口列表，对应电机 1~8
+#COMS = ['COM8','COM9','COM10','COM11','COM12','COM13','COM14','COM15']
+#sers = [serial.Serial(port, 115200, timeout=0.1) for port in COMS]
+
+# 协议常量
+HEADER    = 0x7B
+MODE_SPEED= 0x01
+DIR_CW    = 0x01
+MICROSTEP = 0x20
+TAIL      = 0x7D
+
+# 速度字段：10 rad/s -> 100 -> 高低字节
+speed_val = 10 * 10       # rad/s ×10
+SPEED_H = (speed_val >> 8) & 0xFF
+SPEED_L = speed_val &  0xFF
+
+def build_frame(motor_id, speed_h, speed_l):
+    """
+    构造一次速度控制帧（速度模式，POS=0，方向=CW）。
+    """
+    if motor_id == 1 or motor_id == 3 or motor_id == 5 or motor_id == 7 :
+        DIR_CW_i = 0x00
+    else :
+        DIR_CW_i = 0x01
+    frame = [
+        HEADER,
+        motor_id,
+        MODE_SPEED,
+        DIR_CW_i,
+        MICROSTEP,
+        0x00, 0x00,        # POS_H, POS_L
+        speed_h, speed_l   # SPEED_H, SPEED_L
+    ]
+    # 计算 BCC
+    bcc = 0
+    for b in frame:
+        bcc ^= b
+    frame.append(bcc)
+    frame.append(TAIL)
+    print(bytes(frame))
+    return bytes(frame)
+
+def init_cables():
+    for idx, ser in enumerate(SER, start=0):
+        # 构造“启动”帧
+        input("启动下一个")
+        print("idx=",idx,"ser=",ser)
+        start_frame = build_frame(idx, SPEED_H, SPEED_L)
+        ser.write(start_frame)
+        print(f"⚙️  Motor {idx} running @10 rad/s CW.  → 按 Enter 停止")
+        
+        input()  # 等待用户回车
+        
+        # 构造“停止”帧（速度 = 0）
+        stop_frame = build_frame(idx, 0x00, 0x00)
+        ser.write(stop_frame)
+        print(f"⏹  Motor {idx} stopped.")
+        
+        # 给一点缓冲时间，确保命令被处理
+        time.sleep(0.1)
+
+
+
 
 def initialize_robot():
     """
@@ -219,36 +421,9 @@ def initialize_robot():
     and wait for the Arduino to respond with confirmation.
     """
     input("Please manually move the robot to the origin and press Enter to continue...")
-    ser.write(b"TIGHTEN\n")
-    while True:
-        if ser.in_waiting > 0:  # Check if there's data available from Arduino
-            response = ser.readline().decode().strip()
-            if response == "ROGGER":
-                ser.write("\n".encode())
-                print("send")
-                break
-        else:
-            # Sleep briefly to avoid busy waiting (10ms)
-            time.sleep(0.00001)
-    # 立即发送空指令（仅发送换行符）
-
-    wait_for_tighten_signal(5)
-
-
-def wait_for_tighten_signal(max_attempts=60):
-    success = False
-    for i in range(max_attempts*100):
-        # 如果有串口数据，尝试读取
-        if ser.in_waiting > 0:
-            response = ser.readline().decode().strip()
-            if response == "TIGHTEN_OK":
-                print("Cables tightened, initialization complete!")
-                success = True
-                break
-        # 每次尝试后等待1秒
-        time.sleep(0.01)
-    if not success:
-        print("Tightening failed, please check the connection!")
+    print(">>> 从 1 到 8 号电机依次初始化：10 rad/s CW。")
+    init_cables()
+    print("✅ 全部电机初始化完毕。")
 
 
 
@@ -304,16 +479,78 @@ def main():
         if mode == "1":
             # Trajectory planning mode:
             # Example starting and target poses (6D vectors)
-            start_pose = [30, 20, 10, 75, 0, 0]
-            target_pose = [5, 50, 30, 0.05, 60,-60]
+            start_pose = [34, 28, 33, 0, 0, 0]
+            target_pose = [38, 38, 25, 0, 0,0]
             # Set initial and target velocities & accelerations (here all zeros)
             start_velocity = [0]*6
             target_velocity = [0]*6
             start_acceleration = [0]*6
             target_acceleration = [0]*6
             # T is the total motion time (seconds), num_samples is the number of trajectory points
+
+            start_pose_2 = target_pose
+            target_pose_2 = [25, 38, 25, 0, 0,0]
+            # Set initial and target velocities & accelerations (here all zeros)
+            start_velocity_2 = target_velocity
+            target_velocity_2 = [0]*6#[-1.8,-1.8,0,0,0,0]
+            start_acceleration_2 = target_acceleration
+            target_acceleration_2 = [0]*6
+
+            pose2,traj2,sample_time2,num_sample2=trajectory_workspace_serial(start_pose_2, target_pose_2, start_velocity_2, target_velocity_2,
+                                         start_acceleration_2, target_acceleration_2, 5, 100)
+            
+            start_pose_3 = target_pose_2
+            target_pose_3 = [25, 25, 25, 0, 0,0]
+            # Set initial and target velocities & accelerations (here all zeros)
+            start_velocity_3 = target_velocity_2
+            target_velocity_3 = [0]*6#[1.8,-1.8,0,0,0,0]
+            start_acceleration_3 = target_acceleration_2
+            target_acceleration_3 = [0]*6
+
+            pose3,traj3,sample_time3,num_sample3=trajectory_workspace_serial(start_pose_3, target_pose_3, start_velocity_3, target_velocity_3,
+                                         start_acceleration_3, target_acceleration_3, 5, 100)
+            
+            start_pose_4 = target_pose_3
+            target_pose_4 = [38, 25, 25, 0, 0,0]
+            # Set initial and target velocities & accelerations (here all zeros)
+            start_velocity_4 = target_velocity_3
+            target_velocity_4 = [0]*6#[1.8,1.8,0,0,0,0]
+            start_acceleration_4 = target_acceleration_3
+            target_acceleration_4 = [0]*6
+
+            pose4,traj4,sample_time4,num_sample4=trajectory_workspace_serial(start_pose_4, target_pose_4, start_velocity_4, target_velocity_4,
+                                         start_acceleration_4, target_acceleration_4, 5, 100)
+            
+            start_pose_5 = target_pose_4
+            target_pose_5 = [38, 38, 25, 0, 0,0]
+            # Set initial and target velocities & accelerations (here all zeros)
+            start_velocity_5 = target_velocity_4
+            target_velocity_5 = [0]*6
+            start_acceleration_5 = target_acceleration_4
+            target_acceleration_5 = [0]*6
+
+            pose5,traj5,sample_time5,num_sample5=trajectory_workspace_serial(start_pose_5, target_pose_5, start_velocity_5, target_velocity_5,
+                                         start_acceleration_5, target_acceleration_5, 5, 100)
+            
+            
+            
+            poses=[pose2,pose3,pose4,pose5]
+            
+            trajs =[traj2,traj3,traj4,traj5]
+            sample_times = [sample_time2,sample_time3,sample_time4,sample_time5]
+            num_samples = [num_sample2,num_sample3,num_sample4,num_sample5]
+
             execute_trajectory_workspace(start_pose, target_pose, start_velocity, target_velocity,
-                                         start_acceleration, target_acceleration, 3, 80)
+                                         start_acceleration, target_acceleration, 7, 100)
+            
+
+            execute_traj_serial(poses,trajs,sample_times,num_samples)
+            
+            
+
+            
+
+            
         elif mode == "2":
             # Manual control mode
             while True:

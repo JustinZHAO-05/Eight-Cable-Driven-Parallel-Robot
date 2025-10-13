@@ -4,7 +4,7 @@ clear;
 %% Define symbolic parameters for the robot dimensions
 % 'a', 'b', 'c' are the platform dimensions (length, width, height)
 % 'container_size' is the side length of the cubic container
-syms a b c container_size real;
+syms a b c container_size_x container_size_y container_size_z real;
 
 % Compute half-dimensions of the platform (used to determine mounting points)
 hl = a/2;
@@ -13,14 +13,14 @@ hh = c/2;
 
 %% Define container corners (CV)
 % The container is a cube with side length 'container_size'. Its 8 corners are:
-cv1 = [container_size; container_size; container_size];
-cv2 = [container_size; 0; container_size];
-cv3 = [0; 0; container_size];
-cv4 = [0; container_size; container_size];
-cv5 = [container_size; container_size; 0];
-cv6 = [container_size; 0; 0];
+cv1 = [container_size_x; container_size_y; container_size_z];
+cv2 = [container_size_x; 0; container_size_z];
+cv3 = [0; 0; container_size_z];
+cv4 = [0; container_size_y; container_size_z];
+cv5 = [container_size_x; container_size_y; 0];
+cv6 = [container_size_x; 0; 0];
 cv7 = [0; 0; 0];
-cv8 = [0; container_size; 0];
+cv8 = [0; container_size_y; 0];
 
 % CV is a 3x8 matrix; each column is one corner.
 CV = [cv1, cv2, cv3, cv4, cv5, cv6, cv7, cv8];

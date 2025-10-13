@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import sin,cos
 
-def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
+def calculate_cable_lengths(pose, container_size_x=68, container_size_y=56, container_size_z=66,  a=7.5, b=7.5, c=9):
     """
     Calculate the cable lengths for a 6-DOF, 8-cable driven parallel robot.
     
@@ -22,30 +22,31 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
     beta = pose[4]
     gamma = pose[5]
     # Cable 1
-    Term1_x = container_size - x + (b*(np.cos(gamma)*np.sin(alpha) - np.cos(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
+    Term1_x = container_size_x - x + (b*(np.cos(gamma)*np.sin(alpha) - np.cos(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
                 + (c*(np.sin(alpha)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma)*np.sin(beta)))/2 \
               - (a*np.cos(alpha)*np.cos(beta))/2
-    Term1_y = y - container_size + (b*(np.cos(alpha)*np.cos(gamma) + np.sin(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
+    Term1_y = y - container_size_y + (b*(np.cos(alpha)*np.cos(gamma) + np.sin(alpha)*np.sin(beta)*np.sin(gamma)))/2 \
               + (c*(np.cos(alpha)*np.sin(gamma) - np.cos(gamma)*np.sin(alpha)*np.sin(beta)))/2 \
               + (a*np.cos(beta)*np.sin(alpha))/2
-    Term1_z = container_size - z + (a*np.sin(beta))/2 + (c*np.cos(beta)*np.cos(gamma))/2 \
+    Term1_z = container_size_z - z + (a*np.sin(beta))/2 + (c*np.cos(beta)*np.cos(gamma))/2 \
               - (b*np.cos(beta)*np.sin(gamma))/2
     Q1 = np.sqrt(Term1_x**2 + Term1_y**2 + Term1_z**2 - 3.6**2)
     
     # Cable 2
-    Term2_x = x - container_size + (b*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)))/2 \
+    Term2_x = x - container_size_x + (b*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)))/2 \
               - (c*(sin(alpha)*sin(gamma) + cos(alpha)*cos(gamma)*sin(beta)))/2 \
               + (a*cos(alpha)*cos(beta))/2
-    Term2_y = container_size - z + (a*sin(beta))/2 \
+    Term2_y = container_size_z - z + (a*sin(beta))/2 \
               + (c*cos(beta)*cos(gamma))/2 \
               + (b*cos(beta)*sin(gamma))/2
     Term2_z = y - (b*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)))/2 \
               + (c*(cos(alpha)*sin(gamma) - cos(gamma)*sin(alpha)*sin(beta)))/2 \
               + (a*cos(beta)*sin(alpha))/2
-    Q2 = np.sqrt(Term2_x**2 + Term2_y**2 + Term2_z**2 - 3.6**2)
+    Q2 = np.sqrt(Term2_x**2 + Term2_y**2 +
+                  Term2_z**2 - 3.6**2)
     
     # Cable 3
-    Term3_x = container_size - z - (a*sin(beta))/2 + (c*cos(beta)*cos(gamma))/2 + (b*cos(beta)*sin(gamma))/2
+    Term3_x = container_size_z - z - (a*sin(beta))/2 + (c*cos(beta)*cos(gamma))/2 + (b*cos(beta)*sin(gamma))/2
     Term3_y = x + (b*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)))/2 \
         - (c*(sin(alpha)*sin(gamma) + cos(alpha)*cos(gamma)*sin(beta)))/2 \
         - (a*cos(alpha)*cos(beta))/2
@@ -55,10 +56,10 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
     Q3 = np.sqrt(Term3_x**2 + Term3_y**2 + Term3_z**2 - 3.6**2)
     
     # Cable 4
-    Term4_x = y - container_size + (b*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)))/2 \
+    Term4_x = y - container_size_y + (b*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)))/2 \
         + (c*(cos(alpha)*sin(gamma) - cos(gamma)*sin(alpha)*sin(beta)))/2 \
         - (a*cos(beta)*sin(alpha))/2
-    Term4_y = z - container_size + (a*sin(beta))/2 \
+    Term4_y = z - container_size_z + (a*sin(beta))/2 \
         - (c*cos(beta)*cos(gamma))/2 \
         + (b*cos(beta)*sin(gamma))/2
     Term4_z = (b*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)))/2 \
@@ -70,10 +71,10 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
     Term5_x = z - (a*sin(beta))/2 \
         + cos(beta)*sin(gamma)*(b/2 - 3/2) \
         + (c*cos(beta)*cos(gamma))/2
-    Term5_y = x - container_size - (b/2 - 3/2)*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)) \
+    Term5_y = x - container_size_x - (b/2 - 3/2)*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)) \
         + (c*(sin(alpha)*sin(gamma) + cos(alpha)*cos(gamma)*sin(beta)))/2 \
         + (a*cos(alpha)*cos(beta))/2
-    Term5_z = y - container_size + (b/2 - 3/2)*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)) \
+    Term5_z = y - container_size_y + (b/2 - 3/2)*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)) \
         - (c*(cos(alpha)*sin(gamma) - cos(gamma)*sin(alpha)*sin(beta)))/2 \
         + (a*cos(beta)*sin(alpha))/2
     Q5 = np.sqrt(Term5_x**2 + Term5_y**2 + Term5_z**2 - 3.6**2)
@@ -85,7 +86,7 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
     Term6_y = z - (a*sin(beta))/2 \
         - cos(beta)*sin(gamma)*(b/2 - 3/2) \
         + (c*cos(beta)*cos(gamma))/2
-    Term6_z = x - container_size + (b/2 - 3/2)*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)) \
+    Term6_z = x - container_size_x + (b/2 - 3/2)*(cos(gamma)*sin(alpha) - cos(alpha)*sin(beta)*sin(gamma)) \
         + (c*(sin(alpha)*sin(gamma) + cos(alpha)*cos(gamma)*sin(beta)))/2 \
         + (a*cos(alpha)*cos(beta))/2
     Q6 = np.sqrt(Term6_x**2 + Term6_y**2 + Term6_z**2 - 3.6**2)
@@ -107,7 +108,7 @@ def calculate_cable_lengths(pose, container_size=60, a=7.5, b=7.5, c=9):
         + (c*(sin(alpha)*sin(gamma) + cos(alpha)*cos(gamma)*sin(beta)))/2 \
         - (a*cos(alpha)*cos(beta))/2
     Term8_y = z + (a*sin(beta))/2 + cos(beta)*sin(gamma)*(b/2 - 3/2) + (c*cos(beta)*cos(gamma))/2
-    Term8_z = container_size - y - (b/2 - 3/2)*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)) \
+    Term8_z = container_size_y - y - (b/2 - 3/2)*(cos(alpha)*cos(gamma) + sin(alpha)*sin(beta)*sin(gamma)) \
         + (c*(cos(alpha)*sin(gamma) - cos(gamma)*sin(alpha)*sin(beta)))/2 \
         + (a*cos(beta)*sin(alpha))/2
     Q8 = np.sqrt(Term8_x**2 + Term8_y**2 + Term8_z**2 - 3.6**2)
