@@ -3,14 +3,14 @@ import serial
 import numpy as np
 import time
 import math
-from IK_calculation import calculate_cable_lengths 
+from no_longer_use.IK_calculation import calculate_cable_lengths 
 # -------------------------------
 # Global Variables: Robot State
 # -------------------------------
 # current_pose: [x, y, z, roll, pitch, yaw]
 current_pose = [34, 28, -5, 0, 0, 0] #cm
 # current_lengths: cable lengths for 8 cables
-current_lengths = [84.79,84.79,84.79,84.79,39.01,39.01,39.01,39.01]  
+current_lengths = [84.79,84.79,84.79,84.79,38.01,38.01,38.01,38.01]  
 
 # ------------------------------- 
 # Function Definitions
@@ -41,7 +41,7 @@ def compute_motor_degrees_speed(current_lengths, target_lengths, sample_time, re
             pos = int(delta_degrees * 10)
             degrees_h=(pos >> 8) & 0xFF
             degrees_l=pos & 0xFF
-            if i==1 or i==3 or i ==5 or i == 7:
+            if i==3 or i ==5 or i == 7:
                 DIR = 0x01
             else:
                 DIR = 0x00
@@ -69,7 +69,7 @@ def compute_motor_degrees_speed(current_lengths, target_lengths, sample_time, re
             pos = int(-delta_degrees * 10)
             degrees_h=(pos >> 8) & 0xFF
             degrees_l=pos & 0xFF
-            if i ==1 or i == 3 or i == 5 or i == 7 :
+            if i == 3 or i == 5 or i == 7 :
                 DIR = 0x00
             else:
                 DIR= 0x01
@@ -214,7 +214,7 @@ def move_to_target(target_lengths, sample_time):
     #                 reached[addr] = True
     #     # 非阻塞短暂休眠，防止 busy‐wait
     #     time.sleep(0.001)
-    time.sleep((sample_time-15)/1000.0)
+    time.sleep((sample_time)/1000.0)
 
     # 4) 全部到位后，更新状态
     current_lengths = target_lengths.copy()
@@ -335,12 +335,12 @@ def manual_control(key_input):
     elif key_input == 'd': current_pose[1] -= delta
     elif key_input == 'q': current_pose[2] += 3*delta
     elif key_input == 'e': current_pose[2] -= 3*delta
-    elif key_input == 'i': current_pose[3] += 4*delta*3.1415926/180
-    elif key_input == 'k': current_pose[3] -= 4*delta*3.1415926/180
-    elif key_input == 'j': current_pose[4] += 2*delta*3.1415926/180
-    elif key_input == 'l': current_pose[4] -= 2*delta*3.1415926/180
-    elif key_input == 'u': current_pose[5] += 2*delta*3.1415926/180
-    elif key_input == 'o': current_pose[5] -= 2*delta*3.1415926/180
+    elif key_input == 'i': current_pose[3] += delta*3.1415926/180
+    elif key_input == 'k': current_pose[3] -= delta*3.1415926/180
+    elif key_input == 'j': current_pose[4] += delta*3.1415926/180
+    elif key_input == 'l': current_pose[4] -= delta*3.1415926/180
+    elif key_input == 'u': current_pose[5] += delta*3.1415926/180
+    elif key_input == 'o': current_pose[5] -= delta*3.1415926/180
 
     s_target = inverse_kinematics(current_pose)
     # For manual control, use a default sample time (e.g., 50 ms)
@@ -370,7 +370,7 @@ def build_frame(motor_id, speed_h, speed_l):
     """
     构造一次速度控制帧（速度模式，POS=0，方向=CW）。
     """
-    if motor_id == 1 or motor_id == 3 or motor_id == 5 or motor_id == 7 :
+    if motor_id == 3 or motor_id == 5 or motor_id == 7 :
         DIR_CW_i = 0x00
     else :
         DIR_CW_i = 0x01
@@ -492,34 +492,34 @@ def main():
             target_pose_2 = [25, 38, 25, 0, 0,0]
             # Set initial and target velocities & accelerations (here all zeros)
             start_velocity_2 = target_velocity
-            target_velocity_2 = [0]*6#[-1.8,-1.8,0,0,0,0]
+            target_velocity_2 = [0]*6
             start_acceleration_2 = target_acceleration
             target_acceleration_2 = [0]*6
 
             pose2,traj2,sample_time2,num_sample2=trajectory_workspace_serial(start_pose_2, target_pose_2, start_velocity_2, target_velocity_2,
-                                         start_acceleration_2, target_acceleration_2, 5, 100)
+                                         start_acceleration_2, target_acceleration_2, 7, 100)
             
             start_pose_3 = target_pose_2
             target_pose_3 = [25, 25, 25, 0, 0,0]
             # Set initial and target velocities & accelerations (here all zeros)
             start_velocity_3 = target_velocity_2
-            target_velocity_3 = [0]*6#[1.8,-1.8,0,0,0,0]
+            target_velocity_3 = [0]*6
             start_acceleration_3 = target_acceleration_2
             target_acceleration_3 = [0]*6
 
             pose3,traj3,sample_time3,num_sample3=trajectory_workspace_serial(start_pose_3, target_pose_3, start_velocity_3, target_velocity_3,
-                                         start_acceleration_3, target_acceleration_3, 5, 100)
+                                         start_acceleration_3, target_acceleration_3, 7, 100)
             
             start_pose_4 = target_pose_3
             target_pose_4 = [38, 25, 25, 0, 0,0]
             # Set initial and target velocities & accelerations (here all zeros)
             start_velocity_4 = target_velocity_3
-            target_velocity_4 = [0]*6#[1.8,1.8,0,0,0,0]
+            target_velocity_4 = [0]*6
             start_acceleration_4 = target_acceleration_3
             target_acceleration_4 = [0]*6
 
             pose4,traj4,sample_time4,num_sample4=trajectory_workspace_serial(start_pose_4, target_pose_4, start_velocity_4, target_velocity_4,
-                                         start_acceleration_4, target_acceleration_4, 5, 100)
+                                         start_acceleration_4, target_acceleration_4, 7, 100)
             
             start_pose_5 = target_pose_4
             target_pose_5 = [38, 38, 25, 0, 0,0]
@@ -530,7 +530,7 @@ def main():
             target_acceleration_5 = [0]*6
 
             pose5,traj5,sample_time5,num_sample5=trajectory_workspace_serial(start_pose_5, target_pose_5, start_velocity_5, target_velocity_5,
-                                         start_acceleration_5, target_acceleration_5, 5, 100)
+                                         start_acceleration_5, target_acceleration_5, 7, 100)
             
             
             
@@ -543,13 +543,11 @@ def main():
             execute_trajectory_workspace(start_pose, target_pose, start_velocity, target_velocity,
                                          start_acceleration, target_acceleration, 7, 100)
             
-
             execute_traj_serial(poses,trajs,sample_times,num_samples)
             
             
 
             
-
             
         elif mode == "2":
             # Manual control mode
